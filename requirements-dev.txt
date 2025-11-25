@@ -1,0 +1,7 @@
+py4web
+pydal
+numpy
+requests
+fastapi
+uvicorn[standard]
+pytest

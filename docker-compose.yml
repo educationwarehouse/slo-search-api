@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: slo-api
+    network_mode: host
+    environment:
+      DATABASE_URI: sqlite:///app/slo_search.db
+      EMBEDDING_MODEL: nomic-embed-text
+      DATA_DIR: /app/data
+      OLLAMA_HOST: http://localhost:11434
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - ../curriculum-fo/data:/app/data:ro  # Curriculum data (read-only)
+      - ./models:/app/models  # Cache sentence-transformers models
+      - .:/app  # Mount code for development
+    command: uvicorn api_fastapi:app --host 0.0.0.0 --port 8000

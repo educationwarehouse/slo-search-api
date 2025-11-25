@@ -1,0 +1,4 @@
+py4web
+pydal
+numpy
+requests

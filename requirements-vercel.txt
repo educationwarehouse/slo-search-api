@@ -1,0 +1,6 @@
+fastapi>=0.104.0
+pydal>=20241113.1
+psycopg2-binary>=2.9.9
+python-dotenv>=1.0.0
+numpy>=1.24.0
+mangum>=0.17.0

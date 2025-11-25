@@ -1,0 +1,10 @@
+[project]
+name = "slo-search"
+version = "0.1.0"
+dependencies = [
+    "py4web",
+    "pydal",
+    "psycopg2-binary",
+    "sentence-transformers",
+    "numpy",
+]
