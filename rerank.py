@@ -18,14 +18,11 @@ def rerank_results(query: str, results: List[Dict], limit: int = None) -> List[D
     scored_results = []
     
     for result in results:
-        # Create prompt for relevance scoring
-        prompt = f"""Score the relevance of this curriculum item to the query on a scale of 0-10.
+        # Create prompt for direct scoring (no reasoning)
+        prompt = f"""Score relevance 0-10. Only output the number.
 Query: {query}
-
 Title: {result['title']}
-Description: {result['description']}
-
-Respond with only a number between 0 and 10."""
+Description: {result['description']}"""
 
         try:
             # Use streaming to get results faster
@@ -33,7 +30,7 @@ Respond with only a number between 0 and 10."""
                 model=config.LLM_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=10,
+                max_tokens=3,  # Just need 1-2 digits
                 stream=True
             )
             
