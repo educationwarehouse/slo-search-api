@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 
 class Config:
-    # Database - SQLite by default
-    DATABASE_URI = os.getenv('DATABASE_URI', 'sqlite://slo_search.db')
+    # Database - PostgreSQL
+    DATABASE_URI = os.getenv('DATABASE_URI', 'postgres://slo:slo_password@postgres:5432/slo_search')
     
     # OpenRouter settings
     OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')

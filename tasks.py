@@ -63,7 +63,7 @@ def setup(c):
         default="postgres://slo:slo_password@postgres:5432/slo_search",
         comment="Database connection string\n"
                 "PostgreSQL (recommended): postgres://user:pass@host:port/database\n"
-                "SQLite (development): sqlite:///slo_search.db"
+                "PostgreSQL: postgres://slo:slo_password@postgres:5432/slo_search"
     )
     
     # 6. Embedding Model

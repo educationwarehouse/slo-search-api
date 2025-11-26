@@ -140,7 +140,7 @@ Voeg de server toe aan je Claude Desktop configuratie:
       "command": "python",
       "args": ["/absolute/path/to/slo-search/mcp_server.py"],
       "env": {
-        "DATABASE_URI": "sqlite:////absolute/path/to/slo-search/slo_search.db",
+        "DATABASE_URI": "postgres://slo:slo_password@postgres:5432/slo_search",
         "OPENROUTER_API_KEY": "your_api_key_here"
       }
     }

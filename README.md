@@ -4,7 +4,7 @@ Semantic search API for Dutch curriculum data (Stichting Leerplan Ontwikkeling).
 
 ## Architecture
 
-- **Database**: SQLite or PostgreSQL (configured via `DATABASE_URI`)
+- **Database**: PostgreSQL with pgvector extension
 - **Embeddings**: OpenRouter API (OpenAI-compatible models)
 - **API**: FastAPI
 - **Search**: Hybrid approach:
@@ -125,8 +125,7 @@ The database contains:
 - **10,231 uitwerkingen** (elaborations)
 - **Embeddings** stored as JSON arrays (or binary for PostgreSQL)
 
-**SQLite**: Persists at `./slo_search.db` (~205MB)
-**PostgreSQL**: Configure connection in `.env`
+Configure PostgreSQL connection in `.env` or use default settings from `docker-compose.yml`.
 
 ## Development
 
@@ -144,23 +143,24 @@ docker compose restart api
 
 Edit `.env` or `docker-compose.yml`:
 - `OPENROUTER_API_KEY`: Your OpenRouter API key (required)
-- `DATABASE_URI`: Database connection (SQLite: `sqlite:///app/slo_search.db` or Postgres: `postgres://user:pass@host:port/db`)
+- `DATABASE_URI`: PostgreSQL connection string (e.g., `postgres://user:pass@host:port/db`)
 - `EMBEDDING_MODEL`: OpenRouter embedding model (default: `openai/text-embedding-3-small`)
 - `LLM_MODEL`: LLM model for re-ranking (default: `openai/gpt-4o-mini`)
 - `DATA_DIR`: Path to curriculum data
 
 ## Backup
 
+Use standard PostgreSQL backup tools:
 ```bash
-cp slo_search.db slo_search.db.backup
+docker compose exec postgres pg_dump -U slo slo_search > backup.sql
 ```
 
 ## Architecture Decisions
 
-**Database: SQLite or PostgreSQL**
-- SQLite: Simple deployment, no database server, ~205MB (data + embeddings)
-- PostgreSQL: Better for concurrent writes, production deployments
-- Both work equally well for read-heavy search (12k records)
+**Database: PostgreSQL with pgvector**
+- Production-ready with concurrent access support
+- Efficient vector operations via pgvector extension
+- Scalable for growing datasets beyond 12k records
 
 **Why OpenRouter?**
 - No local model management required

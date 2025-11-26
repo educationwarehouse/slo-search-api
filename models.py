@@ -30,36 +30,19 @@ def get_db(db_uri=None):
         Field('status', 'string'),
     )
     
-    # Embedding tables - use pgvector for PostgreSQL, JSON for SQLite
-    is_postgres = 'postgres' in db_uri.lower()
+    # Embedding tables - use pgvector for PostgreSQL (tables already exist, skip migration)
+    db.define_table('doelzin_embedding',
+        Field('doelzin_id', 'reference doelzin'),
+        Field('embedding_model', 'string'),
+        Field('embedding', 'text'),  # Actual type is vector(768) in DB
+        migrate=False
+    )
     
-    if is_postgres:
-        # For PostgreSQL with pgvector - tables already exist, skip migration
-        db.define_table('doelzin_embedding',
-            Field('doelzin_id', 'reference doelzin'),
-            Field('embedding_model', 'string'),
-            Field('embedding', 'text'),  # Actual type is vector(768) in DB
-            migrate=False
-        )
-        
-        db.define_table('uitwerking_embedding',
-            Field('uitwerking_id', 'reference uitwerking'),
-            Field('embedding_model', 'string'),
-            Field('embedding', 'text'),  # Actual type is vector(768) in DB
-            migrate=False
-        )
-    else:
-        # For SQLite use JSON
-        db.define_table('doelzin_embedding',
-            Field('doelzin_id', 'reference doelzin', unique=True, notnull=True),
-            Field('embedding_model', 'string', notnull=True),
-            Field('embedding', 'json', notnull=True),
-        )
-        
-        db.define_table('uitwerking_embedding',
-            Field('uitwerking_id', 'reference uitwerking', unique=True, notnull=True),
-            Field('embedding_model', 'string', notnull=True),
-            Field('embedding', 'json', notnull=True),
-        )
+    db.define_table('uitwerking_embedding',
+        Field('uitwerking_id', 'reference uitwerking'),
+        Field('embedding_model', 'string'),
+        Field('embedding', 'text'),  # Actual type is vector(768) in DB
+        migrate=False
+    )
     
     return db
