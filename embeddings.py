@@ -43,7 +43,7 @@ def combine_text_for_embedding(title: str, description: str) -> str:
     """Combine title and description for embedding."""
     return f"{title}\n{description}" if title else description
 
-def create_embeddings_batch(texts: list[str], model_name: str = None, batch_size: int = 100) -> list:
+def create_embeddings_batch(texts: list[str], model_name: str = None, batch_size: int = 1000) -> list:
     """Create embeddings for a batch of texts."""
     from tqdm import tqdm
     
