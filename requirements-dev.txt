@@ -8,3 +8,5 @@ fastapi
 uvicorn[standard]
 pytest
 fastmcp
+edwh
+python-dotenv
