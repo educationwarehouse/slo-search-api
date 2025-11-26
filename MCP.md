@@ -89,7 +89,7 @@ Zorg dat de database bestaat en data is ingevoerd:
 ```bash
 # Via Docker
 docker compose up -d
-docker compose exec api python ingest.py
+docker compose exec rest-api python ingest.py
 
 # Of lokaal
 python ingest.py

@@ -44,7 +44,7 @@ See [MCP.md](MCP.md) for MCP server documentation.
 
 3. **Ingest data (first time only):**
    ```bash
-   docker compose exec api python ingest.py
+   docker compose exec rest-api python ingest.py
    # Generates 12,873 embeddings via OpenRouter API
    ```
 

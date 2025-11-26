@@ -99,7 +99,7 @@ def setup(c):
     print("  1. Review .env file and update OPENROUTER_API_KEY")
     print("  2. Ensure Traefik broker network exists: docker network create broker")
     print("  3. Start services: docker compose up -d")
-    print("  4. Ingest data: docker compose exec api python ingest.py")
+    print("  4. Ingest data: docker compose exec rest-api python ingest.py")
     print(f"  5. Test API: curl https://{project}-api.{domain}/api/stats\n")
 
 
