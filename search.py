@@ -111,7 +111,8 @@ def search_combined(
                 d.id as doelzin_id,
                 MAX(1 - (ue.embedding <=> '{vector_str}'::vector)) as uitwerking_sim
             FROM doelzin d
-            JOIN uitwerking u ON u.fo_id = ANY(d.uitwerking_ids)
+            CROSS JOIN LATERAL jsonb_array_elements_text(d.uitwerking_ids::jsonb) AS uit_id
+            JOIN uitwerking u ON u.fo_id = uit_id
             JOIN uitwerking_embedding ue ON ue.uitwerking_id = u.id
             GROUP BY d.id
         )
