@@ -18,6 +18,14 @@ Semantic search API for Dutch curriculum data (Stichting Leerplan Ontwikkeling).
 - Ollama running locally with `nomic-embed-text` model
 - Curriculum data in `../curriculum-fo/data/`
 
+## Deployment Options
+
+This project provides two interfaces:
+- **FastAPI REST API** - HTTP endpoints for web integration
+- **MCP Server** - Model Context Protocol for AI assistants (Claude, etc.)
+
+See [MCP.md](MCP.md) for MCP server documentation.
+
 ## Quick Start
 
 1. **Pull the embedding model:**
