@@ -4,10 +4,13 @@ Semantic search API for Dutch curriculum data (Stichting Leerplan Ontwikkeling).
 
 ## Architecture
 
-- **Database**: SQLite (205MB, file-based)
+- **Database**: SQLite or PostgreSQL (configured via `DATABASE_URI`)
 - **Embeddings**: Ollama `nomic-embed-text` (768-dim)
 - **API**: FastAPI
-- **Search**: Numpy-based cosine similarity
+- **Search**: Hybrid approach:
+  - Numpy-based cosine similarity
+  - Query-boosted cosine (lexical + semantic)
+  - Optional LLM re-ranking (via Ollama)
 
 ## Prerequisites
 
@@ -35,16 +38,20 @@ Semantic search API for Dutch curriculum data (Stichting Leerplan Ontwikkeling).
 
 4. **Test the API:**
    ```bash
-   curl "http://localhost:8000/api/search?q=fotosynthese&limit=3"
+   # Simple search
+   curl "http://localhost:8000/api/search?q=fotosynthese&limit=5"
+   
+   # With custom parameters
+   curl "http://localhost:8000/api/search?q=fotosynthese&limit=10&threshold=0.7&rerank=false"
    ```
 
 ## API Endpoints
 
 ### Combined Search (Recommended)
 ```bash
-GET/POST /api/search?q=<query>&limit=10&weight=0.7
+GET/POST /api/search?q=<query>&limit=100&threshold=0.6&weight=0.7&rerank=true
 ```
-Searches both doelzinnen and uitwerkingen with weighted scoring.
+Searches both doelzinnen and uitwerkingen with weighted scoring, LLM re-ranking, and query-boosted cosine enhancement.
 
 ### Doelzinnen Only
 ```bash
@@ -85,25 +92,29 @@ GET /api/stats
       "doelzin_similarity": 0.472,
       "uitwerking_similarity": 0.722
     }
-  ]
+  ],
+  "reranked": true,
+  "enhanced": true
 }
 ```
 
 ## Parameters
 
 - `q`/`query`: Search text (required)
-- `limit`: Max results (default: 10)
-- `threshold`: Min similarity 0-1 (default: 0.0)
+- `limit`: Max results (default: 100)
+- `threshold`: Min similarity 0-1 (default: 0.6)
 - `weight`: Doelzin weight 0-1 (default: 0.7)
+- `rerank`: Use LLM re-ranking (default: true)
 
 ## Database
 
-The SQLite database (`slo_search.db`) contains:
+The database contains:
 - **2,642 doelzinnen** (learning goals)
 - **10,231 uitwerkingen** (elaborations)
-- **Embeddings** stored as JSON arrays
+- **Embeddings** stored as JSON arrays (or binary for PostgreSQL)
 
-Database persists on host at `./slo_search.db` (205MB).
+**SQLite**: Persists at `./slo_search.db` (~205MB)
+**PostgreSQL**: Configure connection in `.env`
 
 ## Development
 
@@ -119,10 +130,12 @@ docker compose restart api
 
 ## Configuration
 
-Edit `docker-compose.yml`:
-- `EMBEDDING_MODEL`: Ollama model name
-- `DATABASE_URI`: Database path
-- `OLLAMA_HOST`: Ollama API URL
+Edit `docker-compose.yml` or `.env`:
+- `DATABASE_URI`: Database connection (SQLite: `sqlite:///app/slo_search.db` or Postgres: `postgres://user:pass@host:port/db`)
+- `EMBEDDING_MODEL`: Ollama model name (default: `nomic-embed-text`)
+- `OLLAMA_HOST`: Ollama API URL (default: `http://localhost:11434`)
+- `OLLAMA_MODEL`: LLM model for re-ranking (default: `llama3.2:latest`)
+- `DATA_DIR`: Path to curriculum data
 
 ## Backup
 
@@ -132,11 +145,10 @@ cp slo_search.db slo_search.db.backup
 
 ## Architecture Decisions
 
-**Why SQLite?**
-- Simple deployment (no database server)
-- Fast for read-heavy workloads
-- 205MB total size (data + embeddings)
-- Perfect for this use case (12k records)
+**Database: SQLite or PostgreSQL**
+- SQLite: Simple deployment, no database server, ~205MB (data + embeddings)
+- PostgreSQL: Better for concurrent writes, production deployments
+- Both work equally well for read-heavy search (12k records)
 
 **Why Ollama?**
 - No heavy ML dependencies (torch, transformers)
