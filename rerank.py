@@ -5,13 +5,14 @@ from openai import OpenAI
 from config import config
 
 def rerank_results(query: str, results: List[Dict], limit: int = None) -> List[Dict]:
-    """Rerank search results using OpenRouter LLM scoring."""
+    """Rerank search results using OpenRouter LLM scoring with streaming and timeout."""
     if not results:
         return results
     
     client = OpenAI(
         base_url=config.OPENROUTER_BASE_URL,
-        api_key=config.OPENROUTER_API_KEY
+        api_key=config.OPENROUTER_API_KEY,
+        timeout=5.0  # 5-second timeout per request
     )
     
     scored_results = []
@@ -27,20 +28,31 @@ Description: {result['description']}
 Respond with only a number between 0 and 10."""
 
         try:
-            response = client.chat.completions.create(
+            # Use streaming to get results faster
+            stream = client.chat.completions.create(
                 model=config.LLM_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=10
+                max_tokens=10,
+                stream=True
             )
             
-            score_text = response.choices[0].message.content.strip()
-            # Extract first number from response
-            match = re.search(r'\d+\.?\d*', score_text)
-            llm_score = float(match.group()) / 10.0 if match else result['similarity']
+            # Accumulate streamed response
+            score_text = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    score_text += chunk.choices[0].delta.content
+                    # Try to extract number as soon as we have it
+                    match = re.search(r'\d+\.?\d*', score_text)
+                    if match:
+                        llm_score = float(match.group()) / 10.0
+                        break
+            else:
+                # No number found in stream
+                llm_score = result['similarity']
                 
-        except:
-            # Fallback to original similarity on error
+        except Exception:
+            # Fallback to original similarity on timeout or error
             llm_score = result['similarity']
         
         result['llm_score'] = llm_score
