@@ -1,15 +1,30 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: slo-postgres
+    environment:
+      POSTGRES_DB: slo_search
+      POSTGRES_USER: slo
+      POSTGRES_PASSWORD: slo_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - slo-network
+
   api:
     build: .
     container_name: slo-api
-    network_mode: host
     environment:
-      DATABASE_URI: sqlite:///app/slo_search.db
+      DATABASE_URI: postgresql://slo:slo_password@postgres:5432/slo_search
       EMBEDDING_MODEL: nomic-embed-text
       DATA_DIR: /app/data
-      OLLAMA_HOST: http://localhost:11434
+      OLLAMA_HOST: http://host.docker.internal:11434
       OLLAMA_MODEL: llama3.2:latest
     ports:
       - "8000:8000"
@@ -19,3 +34,16 @@ services:
       - ./models:/app/models  # Cache sentence-transformers models
       - .:/app  # Mount code for development
     command: uvicorn api_fastapi:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - postgres
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - slo-network
+
+volumes:
+  postgres_data:
+
+networks:
+  slo-network:
+    driver: bridge
