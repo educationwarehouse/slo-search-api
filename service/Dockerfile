@@ -5,20 +5,19 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 # Create non-root user
 RUN useradd -m -u 1000 slo && mkdir -p /app && chown -R slo:slo /app
 
 WORKDIR /app
 
-# Copy requirements first (layer caching)
+# Install dependencies with uv (no cache)
 COPY requirements-dev.txt .
-RUN pip install --no-cache-dir -r requirements-dev.txt
+RUN uv pip install --system --no-cache -r requirements-dev.txt
 
-# Copy application code
-COPY --chown=slo:slo *.py ./
-COPY --chown=slo:slo config.py ./
-
-# Switch to non-root user
+# Code comes from volume mount, not COPY
 USER slo
 
 # Health check

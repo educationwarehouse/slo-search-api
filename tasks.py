@@ -166,5 +166,5 @@ def ingest(c):
     """Run data ingestion in Docker container."""
     print("\n📥 Starting data ingestion...")
     print("This will generate ~12,873 embeddings via OpenRouter API\n")
-    c.run("docker compose exec api python ingest.py")
+    c.run("docker compose exec rest-api python ingest.py")
     print("\n✅ Ingestion complete!")

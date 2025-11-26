@@ -18,9 +18,9 @@ services:
         max-size: "100m"
         max-file: "5"
 
-  api:
-    build: .
-    container_name: ${PROJECT:-slo-search}-api
+  rest-api:
+    build: ./service
+    container_name: ${PROJECT:-slo-search}-rest-api
     environment:
       DATABASE_URI: postgres://slo:slo_password@postgres:5432/slo_search
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
     volumes:
       - ../curriculum-fo/data:/app/data:ro
-      - .:/app
+      - ./service:/app
     command: uvicorn api_fastapi:app --host 0.0.0.0 --port 8000
     depends_on:
       - postgres
@@ -41,11 +41,11 @@ services:
       - broker
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.rule=Host(`${PROJECT:-slo-search}-api.${HOSTINGDOMAIN:-localhost}`)"
-      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.tls=true"
-      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.entrypoints=web-secured"
-      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.tls.certresolver=letsencrypt"
-      - "traefik.http.services.${PROJECT:-slo-search}-api.loadbalancer.server.port=8000"
+      - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.rule=Host(`${PROJECT:-slo-search}-rest-api.${HOSTINGDOMAIN:-localhost}`)"
+      - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.tls=true"
+      - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.entrypoints=web-secured"
+      - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PROJECT:-slo-search}-rest-api.loadbalancer.server.port=8000"
       - "traefik.docker.network=broker"
     logging:
       driver: "json-file"
@@ -53,12 +53,12 @@ services:
         max-size: "100m"
         max-file: "5"
 
-  mcp:
-    build: .
-    container_name: ${PROJECT:-slo-search}-mcp
+  mcp-api:
+    build: ./service
+    container_name: ${PROJECT:-slo-search}-mcp-api
     environment:
       MCP_SERVER_NAME: ${PROJECT:-slo-search}
-      API_BASE_URL: http://api:8000/api
+      API_BASE_URL: http://rest-api:8000/api
       FASTMCP_LOG_LEVEL: INFO
     expose:
       - 8000
@@ -66,20 +66,20 @@ services:
     healthcheck:
       disable: true
     volumes:
-      - ./mcp_server.py:/app/server.py:ro
-    command: python server.py
+      - ./service:/app
+    command: python mcp_server.py
     depends_on:
-      - api
+      - rest-api
     networks:
       - slo-network
       - broker
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.rule=Host(`${PROJECT:-slo-search}-mcp.${HOSTINGDOMAIN:-localhost}`)"
-      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.tls=true"
-      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.entrypoints=web-secured"
-      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.tls.certresolver=letsencrypt"
-      - "traefik.http.services.${PROJECT:-slo-search}-mcp.loadbalancer.server.port=8000"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.rule=Host(`${PROJECT:-slo-search}-mcp-api.${HOSTINGDOMAIN:-localhost}`)"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.tls=true"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.entrypoints=web-secured"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PROJECT:-slo-search}-mcp-api.loadbalancer.server.port=8000"
       - "traefik.docker.network=broker"
     logging:
       driver: "json-file"
