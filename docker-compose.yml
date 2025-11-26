@@ -21,10 +21,10 @@ services:
     build: .
     container_name: slo-api
     environment:
-      DATABASE_URI: postgresql://slo:slo_password@postgres:5432/slo_search
+      DATABASE_URI: postgres://slo:slo_password@postgres:5432/slo_search
       EMBEDDING_MODEL: nomic-embed-text
       DATA_DIR: /app/data
-      OLLAMA_HOST: http://host.docker.internal:11434
+      OLLAMA_HOST: http://10.221.194.32:11434
       OLLAMA_MODEL: llama3.2:latest
     ports:
       - "8000:8000"
