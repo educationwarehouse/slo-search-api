@@ -12,6 +12,8 @@ from search import (
     search_combined,
     get_doelzin_with_uitwerkingen
 )
+from rerank import rerank_results
+from qb_cosine import enhance_with_qb_cosine
 from config import config
 
 app = FastAPI(
@@ -49,8 +51,8 @@ init_db()
 
 class SearchRequest(BaseModel):
     query: str
-    limit: Optional[int] = 10
-    threshold: Optional[float] = 0.0
+    limit: Optional[int] = 100  # High enough to capture all relevant results
+    threshold: Optional[float] = 0.6  # Filter to fair+ quality
     weight: Optional[float] = 0.7
 
 
@@ -76,9 +78,10 @@ def root():
 def api_search(
     q: Optional[str] = Query(None),
     query: Optional[str] = None,
-    limit: int = Query(10),
+    limit: int = Query(100),
+    threshold: float = Query(0.6),
     weight: float = Query(0.7),
-    rerank: bool = Query(False, description="Use LLM re-ranking for better results"),
+    rerank: bool = Query(True, description="Use LLM re-ranking for better results"),
     body: Optional[SearchRequest] = None
 ):
     """Combined search across doelzinnen and uitwerkingen."""
@@ -90,25 +93,36 @@ def api_search(
         raise HTTPException(400, "Missing query parameter")
     
     search_limit = body.limit if body else limit
+    search_threshold = body.threshold if body else threshold
     search_weight = body.weight if body else weight
     
     results = search_combined(
         db, 
         search_query, 
-        limit=search_limit, 
+        limit=search_limit,
+        threshold=search_threshold,
         doelzin_weight=search_weight
     )
     
     # Optional LLM re-ranking
     if rerank:
-        from search_llm import rerank_with_llm
-        results = rerank_with_llm(db, search_query, results)
+        results = rerank_results(search_query, results, limit=search_limit)
+    
+    # Apply query-boosted cosine for hybrid semantic + lexical search
+    results = enhance_with_qb_cosine(search_query, results)
+    
+    # Apply threshold filtering after all enhancements
+    results = [r for r in results if r['similarity'] >= search_threshold]
+    
+    # Limit results
+    results = results[:search_limit]
     
     return {
         "query": search_query,
         "count": len(results),
         "results": results,
-        "reranked": rerank
+        "reranked": rerank,
+        "enhanced": True
     }
 
 
