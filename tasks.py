@@ -14,11 +14,42 @@ generate_password = tasks.generate_password
 
 @task
 def setup(c):
-    """Configure environment variables for SLO Search with OpenRouter."""
+    """Configure environment variables for SLO Search with OpenRouter and Traefik."""
     
     print("\n=== SLO Search Environment Setup ===\n")
     
-    # 1. OpenRouter API Key (required)
+    # 1. Project name for Docker and Traefik
+    project = check_env(
+        "PROJECT",
+        default="slo-search",
+        comment="Project naam voor Docker containers en Traefik routing"
+    )
+    assert project.strip() and project.replace('-', '').replace('_', '').isalnum(), \
+        "PROJECT moet alfanumeriek zijn (- en _ toegestaan)"
+    
+    # 2. Hosting domain for Traefik
+    domain = check_env(
+        "HOSTINGDOMAIN",
+        default="localhost",
+        comment="Domain voor Traefik routing (bijv. example.com)\n"
+                f"API beschikbaar op: {project}-api.{{domain}}\n"
+                f"MCP beschikbaar op: {project}.{{domain}}"
+    )
+    assert domain.strip(), "HOSTINGDOMAIN mag niet leeg zijn"
+    
+    # 3. Clone curriculum-fo repository if not exists
+    curriculum_path = Path("../curriculum-fo")
+    if not curriculum_path.exists():
+        print(f"\n📦 Cloning curriculum data repository...")
+        c.run("git clone https://github.com/slonl/curriculum-fo.git ../curriculum-fo")
+        print(f"✓ Curriculum data cloned to {curriculum_path.resolve()}")
+    elif not (curriculum_path / "data").exists():
+        print(f"\n⚠️  WARNING: Data directory not found in {curriculum_path.resolve()}")
+        print("Repository may be incomplete. Try: rm -rf ../curriculum-fo && ew setup\n")
+    else:
+        print(f"✓ Curriculum data found at {curriculum_path.resolve()}")
+    
+    # 4. OpenRouter API Key (required)
     check_env(
         "OPENROUTER_API_KEY",
         default="",
@@ -26,7 +57,7 @@ def setup(c):
                 "Get one at: https://openrouter.ai/keys"
     )
     
-    # 2. Database URI
+    # 5. Database URI
     check_env(
         "DATABASE_URI",
         default="postgres://slo:slo_password@postgres:5432/slo_search",
@@ -35,7 +66,7 @@ def setup(c):
                 "SQLite (development): sqlite:///slo_search.db"
     )
     
-    # 3. Embedding Model
+    # 6. Embedding Model
     check_env(
         "EMBEDDING_MODEL",
         default="openai/text-embedding-3-small",
@@ -43,7 +74,7 @@ def setup(c):
                 "Options: openai/text-embedding-3-small, openai/text-embedding-3-large"
     )
     
-    # 4. LLM Model for re-ranking
+    # 7. LLM Model for re-ranking
     check_env(
         "LLM_MODEL",
         default="openai/gpt-4o-mini",
@@ -51,7 +82,7 @@ def setup(c):
                 "Options: openai/gpt-4o-mini, openai/gpt-4o, anthropic/claude-3.5-sonnet"
     )
     
-    # 5. Data Directory
+    # 8. Data Directory
     check_env(
         "DATA_DIR",
         default="/app/data",
@@ -60,12 +91,16 @@ def setup(c):
                 "Local: ./data or /absolute/path/to/curriculum-fo/data"
     )
     
-    print("\n✓ Environment setup complete!")
+    print(f"\n✅ Setup compleet!")
+    print(f"\nTraefik URLs:")
+    print(f"  API: https://{project}-api.{domain}")
+    print(f"  MCP: https://{project}.{domain}")
     print("\nNext steps:")
     print("  1. Review .env file and update OPENROUTER_API_KEY")
-    print("  2. Start services: docker compose up -d")
-    print("  3. Ingest data: docker compose exec api python ingest.py")
-    print("  4. Test API: curl http://localhost:8000/api/stats\n")
+    print("  2. Ensure Traefik broker network exists: docker network create broker")
+    print("  3. Start services: docker compose up -d")
+    print("  4. Ingest data: docker compose exec api python ingest.py")
+    print(f"  5. Test API: curl https://{project}-api.{domain}/api/stats\n")
 
 
 @task
@@ -77,6 +112,8 @@ def validate(c):
     load_dotenv()
     
     required = {
+        "PROJECT": "Project name for Docker/Traefik",
+        "HOSTINGDOMAIN": "Domain for Traefik routing",
         "OPENROUTER_API_KEY": "OpenRouter API key",
         "DATABASE_URI": "Database connection string",
         "EMBEDDING_MODEL": "Embedding model name",
@@ -95,8 +132,20 @@ def validate(c):
             print(f"✗ {key}: {description} - NOT SET")
             all_valid = False
     
+    # Check curriculum-fo repository
+    curriculum_path = Path("../curriculum-fo")
+    if curriculum_path.exists() and (curriculum_path / "data").exists():
+        print(f"✓ CURRICULUM_DATA: Repository found at {curriculum_path.resolve()}")
+    else:
+        print(f"✗ CURRICULUM_DATA: Repository not found at {curriculum_path.resolve()}")
+        all_valid = False
+    
     if all_valid:
         print("\n✓ All environment variables are configured!\n")
+        project = os.getenv("PROJECT", "slo-search")
+        domain = os.getenv("HOSTINGDOMAIN", "localhost")
+        print(f"API: https://{project}-api.{domain}")
+        print(f"MCP: https://{project}.{domain}\n")
     else:
         print("\n✗ Some environment variables are missing. Run: ew setup\n")
     
@@ -110,3 +159,12 @@ def generate_db_password(c, length: int = 20):
     print(f"\nGenerated password: {password}")
     print(f"\nTo use in DATABASE_URI:")
     print(f"postgres://slo:{password}@postgres:5432/slo_search\n")
+
+
+@task
+def ingest(c):
+    """Run data ingestion in Docker container."""
+    print("\n📥 Starting data ingestion...")
+    print("This will generate ~12,873 embeddings via OpenRouter API\n")
+    c.run("docker compose exec api python ingest.py")
+    print("\n✅ Ingestion complete!")

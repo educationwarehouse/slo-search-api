@@ -16,7 +16,10 @@ Semantic search API for Dutch curriculum data (Stichting Leerplan Ontwikkeling).
 
 - Docker & Docker Compose
 - OpenRouter API key
-- Curriculum data in `../curriculum-fo/data/`
+- Traefik reverse proxy with broker network (optional, for production)
+
+Clone the curriculum data repository as sibling directory:
+git clone https://github.com/slonl/curriculum-fo.git ../curriculum-fo
 
 ## Deployment Options
 

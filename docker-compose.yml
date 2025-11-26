@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: slo-postgres
+    container_name: ${PROJECT:-slo-search}-postgres
     environment:
       POSTGRES_DB: slo_search
       POSTGRES_USER: slo
@@ -11,32 +9,83 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    ports:
-      - "5432:5432"
     restart: unless-stopped
     networks:
       - slo-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   api:
     build: .
-    container_name: slo-api
+    container_name: ${PROJECT:-slo-search}-api
     environment:
       DATABASE_URI: postgres://slo:slo_password@postgres:5432/slo_search
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       EMBEDDING_MODEL: openai/text-embedding-3-small
       LLM_MODEL: openai/gpt-4o-mini
       DATA_DIR: /app/data
-    ports:
-      - "8000:8000"
+    expose:
+      - 8000
     restart: unless-stopped
     volumes:
-      - ../curriculum-fo/data:/app/data:ro  # Curriculum data (read-only)
-      - .:/app  # Mount code for development
+      - ../curriculum-fo/data:/app/data:ro
+      - .:/app
     command: uvicorn api_fastapi:app --host 0.0.0.0 --port 8000
     depends_on:
       - postgres
     networks:
       - slo-network
+      - broker
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.rule=Host(`${PROJECT:-slo-search}-api.${HOSTINGDOMAIN:-localhost}`)"
+      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.tls=true"
+      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.entrypoints=web-secured"
+      - "traefik.http.routers.${PROJECT:-slo-search}-api-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PROJECT:-slo-search}-api.loadbalancer.server.port=8000"
+      - "traefik.docker.network=broker"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  mcp:
+    build: .
+    container_name: ${PROJECT:-slo-search}-mcp
+    environment:
+      MCP_SERVER_NAME: ${PROJECT:-slo-search}
+      API_BASE_URL: http://api:8000/api
+      FASTMCP_LOG_LEVEL: INFO
+    expose:
+      - 8000
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    volumes:
+      - ./mcp_server.py:/app/server.py:ro
+    command: python server.py
+    depends_on:
+      - api
+    networks:
+      - slo-network
+      - broker
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.rule=Host(`${PROJECT:-slo-search}-mcp.${HOSTINGDOMAIN:-localhost}`)"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.tls=true"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.entrypoints=web-secured"
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PROJECT:-slo-search}-mcp.loadbalancer.server.port=8000"
+      - "traefik.docker.network=broker"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
 volumes:
   postgres_data:
@@ -44,3 +93,6 @@ volumes:
 networks:
   slo-network:
     driver: bridge
+  broker:
+    name: broker
+    external: true
