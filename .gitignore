@@ -27,8 +27,13 @@ databases/
 # Environment
 .env
 venv/
+.venv/
 env/
 ENV/
+
+# Artifacts
+.toml
+.l/
 
 # py4web
 apps/*/sessions/
