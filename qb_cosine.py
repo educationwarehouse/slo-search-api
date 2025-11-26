@@ -57,8 +57,13 @@ def enhance_with_qb_cosine(
     
     # First pass: calculate BM25 scores
     for result in results:
-        # Combine title and description for lexical matching
+        # Combine title, description AND uitwerking texts for lexical matching
         document = f"{result['title']} {result['description']}"
+        
+        # Include uitwerking texts if available
+        if 'uitwerking_texts' in result and result['uitwerking_texts']:
+            document += " " + " ".join(result['uitwerking_texts'])
+        
         bm25_score = calculate_bm25_score(query, document)
         max_bm25 = max(max_bm25, bm25_score)
         result['bm25_score'] = bm25_score

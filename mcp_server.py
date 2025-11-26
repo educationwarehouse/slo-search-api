@@ -27,7 +27,7 @@ db = get_db()
 def search(
     query: str,
     limit: int = 100,
-    threshold: float = 0.6,
+    threshold: float = 0.5,  # Lower default - real scores are 0.54-0.75
     weight: float = 0.7,
     rerank: bool = True
 ) -> str:
@@ -45,18 +45,21 @@ def search(
     Returns:
         JSON met zoekresultaten en metadata
     """
+    # Get initial results with low threshold to catch potential matches
     results = search_combined(
         db,
         query,
-        limit=limit,
-        threshold=threshold,
+        limit=limit * 3,  # Get more for reranking/filtering
+        threshold=0.2,  # Low threshold - filter noise but catch potential
         doelzin_weight=weight
     )
     
     if rerank:
-        results = rerank_results(query, results, limit=limit)
+        results = rerank_results(query, results, limit=limit * 2)
     
     results = enhance_with_qb_cosine(query, results)
+    
+    # Apply final threshold ONCE after all enhancements
     results = [r for r in results if r['similarity'] >= threshold]
     results = results[:limit]
     

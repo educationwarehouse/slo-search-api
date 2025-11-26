@@ -133,6 +133,15 @@ def search_combined(
         
         if combined_score >= threshold:
             doelzin = db.doelzin[doelzin_id]
+            
+            # Get uitwerking descriptions for lexical matching
+            uitwerking_texts = []
+            if doelzin.uitwerking_ids:
+                for fo_id in doelzin.uitwerking_ids:
+                    uitw = db(db.uitwerking.fo_id == fo_id).select().first()
+                    if uitw and uitw.description:
+                        uitwerking_texts.append(uitw.description)
+            
             results.append({
                 'id': doelzin.id,
                 'fo_id': doelzin.fo_id,
@@ -142,7 +151,8 @@ def search_combined(
                 'soort': doelzin.soort,
                 'similarity': float(combined_score),
                 'doelzin_similarity': float(doelzin_sim),
-                'uitwerking_similarity': float(uitwerking_sim)
+                'uitwerking_similarity': float(uitwerking_sim),
+                'uitwerking_texts': uitwerking_texts  # For qb_cosine lexical matching
             })
     
     results.sort(key=lambda x: x['similarity'], reverse=True)
