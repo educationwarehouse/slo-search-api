@@ -14,6 +14,6 @@ class Config:
     
     # Ollama settings for LLM reranking
     OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
-    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
+    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2:latest')
 
 config = Config()

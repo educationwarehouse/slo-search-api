@@ -29,7 +29,7 @@ def search(
     limit: int = 100,
     threshold: float = 0.5,  # Lower default - real scores are 0.54-0.75
     weight: float = 0.7,
-    rerank: bool = True
+    rerank: bool = None  # Auto: True for complex queries (5+ words)
 ) -> str:
     """Zoek in het SLO curriculum (doelzinnen en uitwerkingen).
     
@@ -38,13 +38,18 @@ def search(
     Args:
         query: Zoekterm (bijv. "fotosynthese", "wiskunde")
         limit: Max aantal resultaten (default: 100)
-        threshold: Min similarity 0-1 (default: 0.6)
+        threshold: Min similarity 0-1 (default: 0.5)
         weight: Doelzin weight 0-1 (default: 0.7, hogere waarde = meer focus op doelzinnen)
-        rerank: Gebruik LLM re-ranking voor betere resultaten (default: True)
+        rerank: Gebruik LLM re-ranking (default: auto - True for 5+ words)
     
     Returns:
         JSON met zoekresultaten en metadata
     """
+    # Auto-enable reranking for complex queries (5+ words)
+    if rerank is None:
+        word_count = len(query.split())
+        rerank = word_count >= 5
+    
     # Get initial results with low threshold to catch potential matches
     results = search_combined(
         db,
