@@ -1,52 +1,59 @@
-"""Embeddings using Ollama."""
-import requests
+"""Embeddings using OpenRouter."""
 import numpy as np
+from openai import OpenAI
 from config import config
 
-class OllamaEmbeddings:
-    """Ollama embeddings client."""
+class OpenRouterEmbeddings:
+    """OpenRouter embeddings client."""
     
-    def __init__(self, model: str = None, host: str = None):
+    def __init__(self, model: str = None):
         self.model = model or config.EMBEDDING_MODEL
-        self.host = host or config.OLLAMA_HOST
+        self.client = OpenAI(
+            base_url=config.OPENROUTER_BASE_URL,
+            api_key=config.OPENROUTER_API_KEY
+        )
         
     def encode(self, text: str | list[str], convert_to_numpy: bool = True) -> np.ndarray:
         """Encode text to embeddings."""
         if isinstance(text, str):
             text = [text]
         
-        embeddings = []
-        for t in text:
-            response = requests.post(
-                f"{self.host}/api/embeddings",
-                json={"model": self.model, "prompt": t}
-            )
-            response.raise_for_status()
-            emb = response.json()['embedding']
-            embeddings.append(emb)
+        response = self.client.embeddings.create(
+            model=self.model,
+            input=text
+        )
+        
+        embeddings = [item.embedding for item in response.data]
         
         if convert_to_numpy:
             return np.array(embeddings[0] if len(embeddings) == 1 else embeddings)
-        return embeddings[0] if len(embeddings) == 1 else embeddings
+        # Always return list for consistency when not converting to numpy
+        return embeddings
 
 _embedder = None
 
-def get_embeddings(model: str = None) -> OllamaEmbeddings:
+def get_embeddings(model: str = None) -> OpenRouterEmbeddings:
     """Get embeddings instance (singleton)."""
     global _embedder
     if _embedder is None:
-        _embedder = OllamaEmbeddings(model)
+        _embedder = OpenRouterEmbeddings(model)
     return _embedder
 
 def combine_text_for_embedding(title: str, description: str) -> str:
     """Combine title and description for embedding."""
     return f"{title}\n{description}" if title else description
 
-def create_embeddings_batch(texts: list[str], model_name: str = None) -> list:
+def create_embeddings_batch(texts: list[str], model_name: str = None, batch_size: int = 100) -> list:
     """Create embeddings for a batch of texts."""
+    from tqdm import tqdm
+    
     embedder = get_embeddings(model_name)
     embeddings = []
-    for text in texts:
-        emb = embedder.encode(text, convert_to_numpy=False)
-        embeddings.append(emb)
+    
+    # Process in batches for efficiency (100 texts per API call)
+    for i in tqdm(range(0, len(texts), batch_size), desc="Embedding batches"):
+        batch = texts[i:i + batch_size]
+        batch_embeddings = embedder.encode(batch, convert_to_numpy=False)
+        embeddings.extend(batch_embeddings)
+    
     return embeddings

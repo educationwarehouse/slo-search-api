@@ -95,17 +95,14 @@ docker compose exec api python ingest.py
 python ingest.py
 ```
 
-### 3. Ollama moet draaien
+### 3. OpenRouter API key
 
-De embeddings en re-ranking gebruiken Ollama:
+De embeddings en re-ranking gebruiken OpenRouter:
 
 ```bash
-# Check of Ollama draait
-curl http://localhost:11434/api/version
-
-# Zorg dat het model beschikbaar is
-ollama pull nomic-embed-text
-ollama pull llama3.2:latest
+# Zet je API key in .env
+cp .env.example .env
+# Bewerk .env en voeg je OPENROUTER_API_KEY toe
 ```
 
 ## MCP Server starten
@@ -144,7 +141,7 @@ Voeg de server toe aan je Claude Desktop configuratie:
       "args": ["/absolute/path/to/slo-search/mcp_server.py"],
       "env": {
         "DATABASE_URI": "sqlite:////absolute/path/to/slo-search/slo_search.db",
-        "OLLAMA_HOST": "http://localhost:11434"
+        "OPENROUTER_API_KEY": "your_api_key_here"
       }
     }
   }

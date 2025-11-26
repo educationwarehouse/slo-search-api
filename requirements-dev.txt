@@ -3,6 +3,7 @@ pydal
 psycopg2-binary
 numpy
 requests
+openai
 fastapi
 uvicorn[standard]
 pytest

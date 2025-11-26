@@ -22,7 +22,7 @@ def load_json(filepath: Path) -> list:
         return json.load(f)
 
 
-def ingest_doelzinnen(db, data_dir: Path, model_name='nomic-embed-text'):
+def ingest_doelzinnen(db, data_dir: Path, model_name=None):
     """Ingest doelzinnen with embeddings."""
     log(f"Reading doelzinnen from {data_dir / 'doelzinnen.json'}")
     doelzinnen = load_json(data_dir / 'doelzinnen.json')
@@ -62,9 +62,10 @@ def ingest_doelzinnen(db, data_dir: Path, model_name='nomic-embed-text'):
     db.commit()
     
     # Generate embeddings in batch
-    log(f"Generating embeddings using model: {model_name}")
+    model = model_name or config.EMBEDDING_MODEL
+    log(f"Generating embeddings using model: {model}")
     log(f"Total texts to embed: {len(texts)}")
-    embeddings = create_embeddings_batch(texts, model_name)
+    embeddings = create_embeddings_batch(texts, model)
     log(f"✓ Generated {len(embeddings)} embeddings")
     
     # Insert embeddings with batch commits
@@ -76,7 +77,7 @@ def ingest_doelzinnen(db, data_dir: Path, model_name='nomic-embed-text'):
         else:
             db.doelzin_embedding.insert(
                 doelzin_id=doelzin_id, 
-                embedding_model=model_name,
+                embedding_model=model,
                 embedding=embedding
             )
         
@@ -89,7 +90,7 @@ def ingest_doelzinnen(db, data_dir: Path, model_name='nomic-embed-text'):
     print(f"✓ Loaded {len(doelzinnen)} doelzinnen with embeddings")
 
 
-def ingest_uitwerkingen(db, data_dir: Path, model_name='nomic-embed-text'):
+def ingest_uitwerkingen(db, data_dir: Path, model_name=None):
     """Ingest uitwerkingen with embeddings."""
     uitwerkingen = load_json(data_dir / 'uitwerkingen.json')
     
@@ -127,8 +128,9 @@ def ingest_uitwerkingen(db, data_dir: Path, model_name='nomic-embed-text'):
     db.commit()
     
     # Generate embeddings
+    model = model_name or config.EMBEDDING_MODEL
     print("Generating embeddings...")
-    embeddings = create_embeddings_batch(texts, model_name)
+    embeddings = create_embeddings_batch(texts, model)
     
     # Insert embeddings
     print("Storing embeddings...")
@@ -139,7 +141,7 @@ def ingest_uitwerkingen(db, data_dir: Path, model_name='nomic-embed-text'):
         else:
             db.uitwerking_embedding.insert(
                 uitwerking_id=uitwerking_id,
-                embedding_model=model_name,
+                embedding_model=model,
                 embedding=embedding
             )
     

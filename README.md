@@ -5,17 +5,17 @@ Semantic search API for Dutch curriculum data (Stichting Leerplan Ontwikkeling).
 ## Architecture
 
 - **Database**: SQLite or PostgreSQL (configured via `DATABASE_URI`)
-- **Embeddings**: Ollama `nomic-embed-text` (768-dim)
+- **Embeddings**: OpenRouter API (OpenAI-compatible models)
 - **API**: FastAPI
 - **Search**: Hybrid approach:
   - Numpy-based cosine similarity
   - Query-boosted cosine (lexical + semantic)
-  - Optional LLM re-ranking (via Ollama)
+  - Optional LLM re-ranking (via OpenRouter)
 
 ## Prerequisites
 
 - Docker & Docker Compose
-- Ollama running locally with `nomic-embed-text` model
+- OpenRouter API key
 - Curriculum data in `../curriculum-fo/data/`
 
 ## Deployment Options
@@ -28,9 +28,10 @@ See [MCP.md](MCP.md) for MCP server documentation.
 
 ## Quick Start
 
-1. **Pull the embedding model:**
+1. **Set up environment:**
    ```bash
-   ollama pull nomic-embed-text
+   cp .env.example .env
+   # Edit .env and add your OPENROUTER_API_KEY
    ```
 
 2. **Start the API:**
@@ -41,7 +42,7 @@ See [MCP.md](MCP.md) for MCP server documentation.
 3. **Ingest data (first time only):**
    ```bash
    docker compose exec api python ingest.py
-   # Takes ~5 minutes to generate 12,873 embeddings
+   # Generates 12,873 embeddings via OpenRouter API
    ```
 
 4. **Test the API:**
@@ -138,11 +139,11 @@ docker compose restart api
 
 ## Configuration
 
-Edit `docker-compose.yml` or `.env`:
+Edit `.env` or `docker-compose.yml`:
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (required)
 - `DATABASE_URI`: Database connection (SQLite: `sqlite:///app/slo_search.db` or Postgres: `postgres://user:pass@host:port/db`)
-- `EMBEDDING_MODEL`: Ollama model name (default: `nomic-embed-text`)
-- `OLLAMA_HOST`: Ollama API URL (default: `http://localhost:11434`)
-- `OLLAMA_MODEL`: LLM model for re-ranking (default: `llama3.2:latest`)
+- `EMBEDDING_MODEL`: OpenRouter embedding model (default: `openai/text-embedding-3-small`)
+- `LLM_MODEL`: LLM model for re-ranking (default: `openai/gpt-4o-mini`)
 - `DATA_DIR`: Path to curriculum data
 
 ## Backup
@@ -158,13 +159,9 @@ cp slo_search.db slo_search.db.backup
 - PostgreSQL: Better for concurrent writes, production deployments
 - Both work equally well for read-heavy search (12k records)
 
-**Why Ollama?**
-- No heavy ML dependencies (torch, transformers)
-- Easy model management
-- Local inference
-- Great multilingual embeddings
-
-**Why host networking?**
-- Container can access localhost Ollama
-- No port forwarding complexity
-- Direct communication with host services
+**Why OpenRouter?**
+- No local model management required
+- Access to best-in-class embedding models (OpenAI, etc.)
+- Flexible LLM selection for re-ranking
+- OpenAI-compatible API (easy migration path)
+- Pay-per-use pricing (no infrastructure overhead)

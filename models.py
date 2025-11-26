@@ -5,7 +5,7 @@ from config import config
 def get_db(db_uri=None):
     """Initialize database with curriculum tables."""
     db_uri = db_uri or config.DATABASE_URI
-    db = DAL(db_uri, folder='.', migrate=True, fake_migrate_all=True, pool_size=1)
+    db = DAL(db_uri, folder='.', migrate=True, pool_size=1)
     
     # Define tables - pydal handles everything
     db.define_table('doelzin',

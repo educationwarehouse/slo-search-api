@@ -1,12 +1,18 @@
-"""LLM-based reranking using Ollama."""
-import requests
+"""LLM-based reranking using OpenRouter."""
+import re
 from typing import List, Dict
+from openai import OpenAI
 from config import config
 
 def rerank_results(query: str, results: List[Dict], limit: int = None) -> List[Dict]:
-    """Rerank search results using Ollama LLM scoring."""
+    """Rerank search results using OpenRouter LLM scoring."""
     if not results:
         return results
+    
+    client = OpenAI(
+        base_url=config.OPENROUTER_BASE_URL,
+        api_key=config.OPENROUTER_API_KEY
+    )
     
     scored_results = []
     
@@ -21,24 +27,17 @@ Description: {result['description']}
 Respond with only a number between 0 and 10."""
 
         try:
-            response = requests.post(
-                f"{config.OLLAMA_HOST}/api/generate",
-                json={
-                    "model": config.OLLAMA_MODEL,
-                    "prompt": prompt,
-                    "stream": False
-                },
-                timeout=10
+            response = client.chat.completions.create(
+                model=config.LLM_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=10
             )
             
-            if response.ok:
-                score_text = response.json()['response'].strip()
-                # Extract first number from response
-                import re
-                match = re.search(r'\d+\.?\d*', score_text)
-                llm_score = float(match.group()) / 10.0 if match else result['similarity']
-            else:
-                llm_score = result['similarity']
+            score_text = response.choices[0].message.content.strip()
+            # Extract first number from response
+            match = re.search(r'\d+\.?\d*', score_text)
+            llm_score = float(match.group()) / 10.0 if match else result['similarity']
                 
         except:
             # Fallback to original similarity on error
