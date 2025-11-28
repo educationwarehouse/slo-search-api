@@ -35,9 +35,17 @@ app.add_middleware(
 db = None
 
 def init_db():
-    """Initialize database schema once."""
+    """Initialize database schema once with auto-recovery for orphaned .table files."""
     global db
-    db = get_db()
+    import psycopg2.errors
+    
+    try:
+        db = get_db()
+    except psycopg2.errors.DuplicateTable:
+        # Tables exist but .table files were deleted - use fake_migrate to recreate them
+        print("⚠️  Detected orphaned .table files. Running fake_migrate to recover...")
+        db = get_db(fake_migrate=True)
+        print("✅ Database schema recovered successfully")
 
 def get_database():
     """Get database connection - assumes db already initialized."""

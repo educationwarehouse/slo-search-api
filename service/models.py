@@ -2,10 +2,15 @@
 from pydal import DAL, Field
 from config import config
 
-def get_db(db_uri=None):
-    """Initialize database with curriculum tables."""
+def get_db(db_uri=None, fake_migrate=False):
+    """Initialize database with curriculum tables.
+    
+    Args:
+        db_uri: Database connection string
+        fake_migrate: If True, recreate .table files without running migrations
+    """
     db_uri = db_uri or config.DATABASE_URI
-    db = DAL(db_uri, folder='.', migrate=True, pool_size=1)
+    db = DAL(db_uri, folder='.', migrate=not fake_migrate, fake_migrate=fake_migrate, pool_size=1)
     
     # Define tables - pydal handles everything
     db.define_table('doelzin',

@@ -123,5 +123,5 @@ def stats() -> str:
 
 
 if __name__ == "__main__":
-    # Run the MCP server using HTTP/SSE transport
-    mcp.run(transport="sse", host="0.0.0.0", port=8000)
+    # Run the MCP server using streamable-http transport
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=8000)
