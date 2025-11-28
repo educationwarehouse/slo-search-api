@@ -29,6 +29,24 @@ This project provides two interfaces:
 
 See [MCP.md](MCP.md) for MCP server documentation.
 
+## URLs & Domains
+
+When deployed with Traefik, services are available at:
+
+**Current domains:**
+- REST API: `{PROJECT}-rest-api.{HOSTINGDOMAIN}`
+- MCP Server: `{PROJECT}-mcp-api.{HOSTINGDOMAIN}`
+
+**Legacy domains (backward compatibility):**
+- REST API: `slo-search-api.{HOSTINGDOMAIN}`
+- MCP Server: `slo-search-mcp.{HOSTINGDOMAIN}`
+
+Example with `PROJECT=slo-search` and `HOSTINGDOMAIN=example.com`:
+- REST API: `https://slo-search-rest-api.example.com` (or `https://slo-search-api.example.com`)
+- MCP Server: `https://slo-search-mcp-api.example.com` (or `https://slo-search-mcp.example.com`)
+
+Both domain patterns are supported simultaneously for backward compatibility.
+
 ## Quick Start
 
 1. **Set up environment:**

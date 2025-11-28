@@ -41,7 +41,9 @@ services:
       - broker
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.rule=Host(`${PROJECT:-slo-search}-rest-api.${HOSTINGDOMAIN:-localhost}`)"
+      # Primary domain: {PROJECT}-rest-api.{HOSTINGDOMAIN}
+      # Legacy domain for backward compatibility: slo-search-api.{HOSTINGDOMAIN}
+      - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.rule=Host(`${PROJECT:-slo-search}-rest-api.${HOSTINGDOMAIN:-localhost}`) || Host(`slo-search-api.${HOSTINGDOMAIN:-localhost}`)"
       - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.tls=true"
       - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.entrypoints=web-secured"
       - "traefik.http.routers.${PROJECT:-slo-search}-rest-api-secure.tls.certresolver=letsencrypt"
@@ -75,7 +77,9 @@ services:
       - broker
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.rule=Host(`${PROJECT:-slo-search}-mcp-api.${HOSTINGDOMAIN:-localhost}`)"
+      # Primary domain: {PROJECT}-mcp-api.{HOSTINGDOMAIN}
+      # Legacy domain for backward compatibility: slo-search-mcp.{HOSTINGDOMAIN}
+      - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.rule=Host(`${PROJECT:-slo-search}-mcp-api.${HOSTINGDOMAIN:-localhost}`) || Host(`slo-search-mcp.${HOSTINGDOMAIN:-localhost}`)"
       - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.tls=true"
       - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.entrypoints=web-secured"
       - "traefik.http.routers.${PROJECT:-slo-search}-mcp-api-secure.tls.certresolver=letsencrypt"

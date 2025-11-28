@@ -2,9 +2,15 @@
 name = "slo-search"
 version = "0.1.0"
 dependencies = [
-    "py4web",
+    "fastapi",
+    "fastmcp",
+    "mcp",
+    "openai",
     "pydal",
     "psycopg2-binary",
-    "sentence-transformers",
     "numpy",
+    "requests",
+    "tqdm",
+    "uvicorn",
+    "edwh",
 ]

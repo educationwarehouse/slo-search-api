@@ -32,8 +32,8 @@ def setup(c):
         "HOSTINGDOMAIN",
         default="localhost",
         comment="Domain voor Traefik routing (bijv. example.com)\n"
-                f"API beschikbaar op: {project}-api.{{domain}}\n"
-                f"MCP beschikbaar op: {project}.{{domain}}"
+                f"API beschikbaar op: {project}-rest-api.{{domain}}\n"
+                f"MCP beschikbaar op: {project}-mcp-api.{{domain}}"
     )
     assert domain.strip(), "HOSTINGDOMAIN mag niet leeg zijn"
     
@@ -93,8 +93,10 @@ def setup(c):
     
     print(f"\n✅ Setup compleet!")
     print(f"\nTraefik URLs:")
-    print(f"  API: https://{project}-api.{domain}")
-    print(f"  MCP: https://{project}.{domain}")
+    print(f"  API: https://{project}-rest-api.{domain}")
+    print(f"       (legacy: https://slo-search-api.{domain})")
+    print(f"  MCP: https://{project}-mcp-api.{domain}")
+    print(f"       (legacy: https://slo-search-mcp.{domain})")
     print("\nNext steps:")
     print("  1. Review .env file and update OPENROUTER_API_KEY")
     print("  2. Ensure Traefik broker network exists: docker network create broker")
@@ -144,8 +146,10 @@ def validate(c):
         print("\n✓ All environment variables are configured!\n")
         project = os.getenv("PROJECT", "slo-search")
         domain = os.getenv("HOSTINGDOMAIN", "localhost")
-        print(f"API: https://{project}-api.{domain}")
-        print(f"MCP: https://{project}.{domain}\n")
+        print(f"API: https://{project}-rest-api.{domain}")
+        print(f"     (legacy: https://slo-search-api.{domain})")
+        print(f"MCP: https://{project}-mcp-api.{domain}")
+        print(f"     (legacy: https://slo-search-mcp.{domain})\n")
     else:
         print("\n✗ Some environment variables are missing. Run: ew setup\n")
     
